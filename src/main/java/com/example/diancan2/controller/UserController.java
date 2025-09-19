@@ -24,16 +24,6 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @PostMapping("/register")
-    public String register(@RequestBody User user) {
-        String salt = UUID.randomUUID().toString();
-        String newPassword = new SimpleHash("md5", user.getPassword(), ByteSource.Util.bytes(salt), 2).toHex();
-        user.setSalt(salt);
-        user.setPassword(newPassword);
-        userService.save(user);
-        return "Register success";
-    }
-
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody User user) {
         Subject subject = SecurityUtils.getSubject();

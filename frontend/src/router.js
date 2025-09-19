@@ -1,13 +1,24 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import axios from 'axios';
+import Layout from './components/Layout.vue';
 import Login from './components/Login.vue';
-import Register from './components/Register.vue';
-import AdminPanel from './components/AdminPanel.vue';
+import SeatManagement from './components/SeatManagement.vue';
+import FoodManagement from './components/FoodManagement.vue';
+import OrderManagement from './components/OrderManagement.vue';
 
 const routes = [
     { path: '/login', component: Login, name: 'Login' },
-    { path: '/register', component: Register, name: 'Register' },
-    { path: '/', component: AdminPanel, meta: { requiresAuth: true } },
+    {
+        path: '/',
+        component: Layout,
+        meta: { requiresAuth: true },
+        children: [
+            { path: '', redirect: '/seat-management' },
+            { path: 'seat-management', name: 'seat-management', component: SeatManagement },
+            { path: 'food-management', name: 'food-management', component: FoodManagement },
+            { path: 'order-management', name: 'order-management', component: OrderManagement },
+        ]
+    },
 ];
 
 const router = createRouter({
@@ -15,22 +26,20 @@ const router = createRouter({
     routes,
 });
 
-// Axios 响应拦截器
 axios.interceptors.response.use(response => {
     return response;
 }, error => {
     if (error.response && error.response.status === 401) {
-        // 如果是401，则重定向到登录页面
+        sessionStorage.removeItem('user');
         router.push('/login');
     }
     return Promise.reject(error);
 });
 
-
 router.beforeEach((to, from, next) => {
     const loggedIn = sessionStorage.getItem('user');
     if (to.matched.some(record => record.meta.requiresAuth) && !loggedIn) {
-        next('/login');
+        next({ name: 'Login' });
     } else {
         next();
     }

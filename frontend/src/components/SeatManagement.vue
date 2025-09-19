@@ -1,21 +1,8 @@
 <template>
   <div>
-    <h1>点餐系统后台</h1>
-    <n-tabs type="line" animated>
-      <n-tab-pane name="seat-management" tab="座位管理">
-        <n-h2>座位列表</n-h2>
-        <n-button @click="showAddModal = true" type="primary" style="margin-bottom: 20px;">添加座位</n-button>
-        <n-data-table :columns="seatColumns" :data="seats" :pagination="false" :bordered="false" />
-      </n-tab-pane>
-      <n-tab-pane name="food-management" tab="菜单管理">
-        <n-h2>菜单管理</n-h2>
-        <p>菜单管理功能待实现。</p>
-      </n-tab-pane>
-      <n-tab-pane name="order-management" tab="订单管理">
-        <n-h2>订单管理</n-h2>
-        <p>订单管理功能待实现。</p>
-      </n-tab-pane>
-    </n-tabs>
+    <n-h2>座位列表</n-h2>
+    <n-button @click="showAddModal = true" type="primary" style="margin-bottom: 20px;">添加座位</n-button>
+    <n-data-table :columns="seatColumns" :data="seats" :pagination="false" :bordered="false" />
 
     <!-- 添加座位 Modal -->
     <n-modal v-model:show="showAddModal">

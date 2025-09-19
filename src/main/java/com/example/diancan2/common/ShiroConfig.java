@@ -34,9 +34,8 @@ public class ShiroConfig {
         shiroFilterFactoryBean.setSecurityManager(securityManager);
 
         Map<String, String> filterChainDefinitionMap = new LinkedHashMap<>();
-        // 登录和注册接口允许匿名访问
+        // 登录接口允许匿名访问
         filterChainDefinitionMap.put("/user/login", "anon");
-        filterChainDefinitionMap.put("/user/register", "anon");
         
         // 需要认证的API
         filterChainDefinitionMap.put("/seat/**", "authc");
