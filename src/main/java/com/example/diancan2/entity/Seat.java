@@ -38,4 +38,9 @@ public class Seat implements Serializable {
      * 二维码
      */
     private String qrCode;
+
+    /**
+     * 店铺ID
+     */
+    private Long storeId;
 }

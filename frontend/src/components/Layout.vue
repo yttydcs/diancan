@@ -39,6 +39,8 @@ import {
   RestaurantOutline as SeatIcon,
   FastFoodOutline as FoodIcon,
   ReceiptOutline as OrderIcon,
+  PeopleOutline as UserIcon,
+  StorefrontOutline as StoreIcon,
 } from '@vicons/ionicons5';
 
 function renderIcon(icon) {
@@ -50,21 +52,35 @@ const collapsed = ref(false);
 const activeKey = ref('seat-management');
 
 const menuOptions = [
-  {
-    label: '座位管理',
-    key: 'seat-management',
-    icon: renderIcon(SeatIcon),
-  },
-  {
-    label: '菜单管理',
-    key: 'food-management',
-    icon: renderIcon(FoodIcon),
-  },
-  {
-    label: '订单管理',
-    key: 'order-management',
-    icon: renderIcon(OrderIcon),
-  },
+    {
+        label: '用户管理',
+        key: 'user-management',
+        icon: renderIcon(UserIcon),
+    },
+    {
+        label: '店铺管理',
+        key: 'store-management',
+        icon: renderIcon(StoreIcon),
+    },
+    {
+        type: 'divider',
+        key: 'd1'
+    },
+    {
+        label: '座位管理',
+        key: 'seat-management',
+        icon: renderIcon(SeatIcon),
+    },
+    {
+        label: '菜单管理',
+        key: 'food-management',
+        icon: renderIcon(FoodIcon),
+    },
+    {
+        label: '订单管理',
+        key: 'order-management',
+        icon: renderIcon(OrderIcon),
+    },
 ];
 
 const handleMenuSelect = (key) => {

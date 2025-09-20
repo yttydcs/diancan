@@ -44,4 +44,9 @@ public class Food implements Serializable {
      * 图片URL
      */
     private String imageUrl;
+
+    /**
+     * 店铺ID
+     */
+    private Long storeId;
 }

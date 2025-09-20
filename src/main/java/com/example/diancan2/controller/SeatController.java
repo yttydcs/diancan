@@ -27,7 +27,7 @@ import java.util.List;
  * @since 2024-07-29
  */
 @RestController
-@RequestMapping("/seat")
+@RequestMapping("/api/seat")
 public class SeatController {
 
     @Autowired

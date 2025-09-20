@@ -16,7 +16,7 @@ import java.util.List;
  * @since 2024-07-29
  */
 @RestController
-@RequestMapping("/food")
+@RequestMapping("/api/food")
 public class FoodController {
 
     @Autowired

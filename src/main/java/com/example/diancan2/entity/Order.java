@@ -27,6 +27,11 @@ public class Order implements Serializable {
     private Long seatId;
 
     /**
+     * 店铺ID
+     */
+    private Long storeId;
+
+    /**
      * 总价
      */
     private BigDecimal totalPrice;
