@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -50,5 +51,34 @@ public class UserController {
     @RequiresPermissions("user:manage")
     public List<User> getAllUsers() {
         return userService.list();
+    }
+
+    @PutMapping
+    @RequiresPermissions("user:manage")
+    public User updateUser(@RequestBody User user) {
+        // 不允许通过此接口更新密码
+        user.setPassword(null);
+        userService.updateById(user);
+        return user;
+    }
+
+    @DeleteMapping("/{id}")
+    @RequiresPermissions("user:manage")
+    public void deleteUser(@PathVariable Long id) {
+        userService.removeById(id);
+    }
+
+    @PostMapping("/{id}/reset-password")
+    @RequiresPermissions("user:manage")
+    public void resetPassword(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        User user = userService.getById(id);
+        if (user != null) {
+            String newPassword = payload.get("password");
+            String salt = UUID.randomUUID().toString();
+            String encryptedPassword = new SimpleHash("md5", newPassword, ByteSource.Util.bytes(salt), 2).toHex();
+            user.setSalt(salt);
+            user.setPassword(encryptedPassword);
+            userService.updateById(user);
+        }
     }
 }

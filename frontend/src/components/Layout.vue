@@ -16,7 +16,7 @@
         @expand="collapsed = false"
       >
         <n-menu
-          v-model:value="activeKey"
+          :value="activeKey"
           :collapsed="collapsed"
           :collapsed-width="64"
           :collapsed-icon-size="22"
@@ -32,8 +32,8 @@
 </template>
 
 <script setup>
-import { ref, h } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, h, computed } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { NIcon } from 'naive-ui';
 import {
   RestaurantOutline as SeatIcon,
@@ -48,8 +48,9 @@ function renderIcon(icon) {
 }
 
 const router = useRouter();
+const route = useRoute();
 const collapsed = ref(false);
-const activeKey = ref('seat-management');
+const activeKey = computed(() => route.name);
 
 const menuOptions = [
     {
