@@ -24,6 +24,22 @@
         </template>
       </n-card>
     </n-modal>
+
+    <!-- 分配店长 Modal -->
+    <n-modal v-model:show="showManagerModal">
+        <n-card style="width: 600px" title="分配店长">
+            <n-select
+                v-model:value="selectedManagers"
+                multiple
+                :options="managerOptions"
+                placeholder="选择店长"
+            />
+            <template #footer>
+                <n-button @click="handleAssignManagers">确认分配</n-button>
+            </template>
+        </n-card>
+    </n-modal>
+
   </div>
 </template>
 
@@ -36,6 +52,9 @@ const stores = ref([]);
 const showModal = ref(false);
 const isEdit = ref(false);
 const currentStore = ref({ name: '', address: '' });
+const showManagerModal = ref(false);
+const managerOptions = ref([]);
+const selectedManagers = ref([]);
 const message = useMessage();
 
 const columns = [
@@ -49,6 +68,7 @@ const columns = [
       return h(NSpace, null, {
         default: () => [
           h(NButton, { size: 'small', onClick: () => openEditModal(row) }, { default: () => '编辑' }),
+          h(NButton, { size: 'small', type: 'info', onClick: () => openManagerModal(row) }, { default: () => '分配店长' }),
           h(NButton, { size: 'small', type: 'error', onClick: () => handleDeleteStore(row.id) }, { default: () => '删除' }),
         ],
       });
@@ -65,6 +85,17 @@ const fetchStores = async () => {
   }
 };
 
+const fetchManagers = async () => {
+    try {
+        const response = await axios.get('/api/user');
+        managerOptions.value = response.data
+            .filter(user => user.roleId === 2) // 假设 2 是 manager 的 roleId
+            .map(user => ({ label: user.username, value: user.id }));
+    } catch (error) {
+        message.error('获取店长列表失败');
+    }
+};
+
 const openAddModal = () => {
   isEdit.value = false;
   currentStore.value = { name: '', address: '' };
@@ -75,6 +106,17 @@ const openEditModal = (store) => {
   isEdit.value = true;
   currentStore.value = { ...store };
   showModal.value = true;
+};
+
+const openManagerModal = async (store) => {
+    currentStore.value = store;
+    try {
+        const response = await axios.get(`/api/store/${store.id}/managers`);
+        selectedManagers.value = response.data;
+        showManagerModal.value = true;
+    } catch (error) {
+        message.error('获取当前店长失败');
+    }
 };
 
 const handleSubmit = async () => {
@@ -93,6 +135,16 @@ const handleSubmit = async () => {
   }
 };
 
+const handleAssignManagers = async () => {
+    try {
+        await axios.post(`/api/store/${currentStore.value.id}/managers`, selectedManagers.value);
+        message.success('店长分配成功');
+        showManagerModal.value = false;
+    } catch (error) {
+        message.error('店长分配失败');
+    }
+};
+
 const handleDeleteStore = async (id) => {
   try {
     await axios.delete(`/api/store/${id}`);
@@ -103,5 +155,8 @@ const handleDeleteStore = async (id) => {
   }
 };
 
-onMounted(fetchStores);
+onMounted(() => {
+    fetchStores();
+    fetchManagers();
+});
 </script>

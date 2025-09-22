@@ -104,6 +104,10 @@ const openEditModal = (seat) => {
 };
 
 const handleSubmit = async () => {
+  if (!currentSeat.value.storeId) {
+    message.error('请选择一个店铺');
+    return;
+  }
   try {
     if (isEdit.value) {
       await axios.put('/api/seat', currentSeat.value);

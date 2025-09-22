@@ -54,4 +54,21 @@ public class StoreController {
     public void deleteStore(@PathVariable Long id) {
         storeService.removeById(id);
     }
+
+    @GetMapping("/{id}/managers")
+    @RequiresPermissions("store:manage")
+    public List<Long> getStoreManagers(@PathVariable Long id) {
+        return userStoreMapper.findUserIdsByStoreId(id);
+    }
+
+    @PostMapping("/{id}/managers")
+    @RequiresPermissions("store:manage")
+    public void updateStoreManagers(@PathVariable Long id, @RequestBody List<Long> userIds) {
+        userStoreMapper.deleteByStoreId(id);
+        if (userIds != null && !userIds.isEmpty()) {
+            for (Long userId : userIds) {
+                userStoreMapper.insert(userId, id);
+            }
+        }
+    }
 }

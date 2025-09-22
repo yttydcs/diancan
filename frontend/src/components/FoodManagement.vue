@@ -23,6 +23,16 @@
           <n-form-item label="分类">
             <n-input v-model:value="currentFood.category" />
           </n-form-item>
+          <n-form-item label="图片">
+            <n-upload
+              action="/api/file/upload"
+              :default-upload="true"
+              @finish="handleUploadFinish"
+            >
+              <n-button>上传图片</n-button>
+            </n-upload>
+            <n-image v-if="currentFood.imageUrl" :src="currentFood.imageUrl" width="100" style="margin-top: 10px;" />
+          </n-form-item>
         </n-form>
         <template #footer>
           <n-button @click="handleSubmit" type="primary">确认</n-button>
@@ -35,7 +45,7 @@
 <script setup>
 import { ref, onMounted, h } from 'vue';
 import axios from 'axios';
-import { useMessage, NButton, NSpace } from 'naive-ui';
+import { useMessage, NButton, NSpace, NImage } from 'naive-ui';
 
 const foods = ref([]);
 const showModal = ref(false);
@@ -46,6 +56,7 @@ const currentFood = ref({
   price: 0,
   category: '',
   storeId: null,
+  imageUrl: '',
 });
 const storeOptions = ref([]);
 const message = useMessage();
@@ -53,6 +64,13 @@ const message = useMessage();
 const columns = [
   { title: 'ID', key: 'id' },
   { title: '菜品名称', key: 'name' },
+  {
+    title: '图片',
+    key: 'imageUrl',
+    render(row) {
+      return h(NImage, { src: row.imageUrl, width: "50" });
+    },
+  },
   { title: '价格', key: 'price' },
   { title: '分类', key: 'category' },
   { title: '店铺ID', key: 'storeId' },
@@ -93,7 +111,7 @@ const fetchStores = async () => {
 
 const openAddModal = () => {
   isEdit.value = false;
-  currentFood.value = { name: '', description: '', price: 0, category: '', storeId: null };
+  currentFood.value = { name: '', description: '', price: 0, category: '', storeId: null, imageUrl: '' };
   showModal.value = true;
 };
 
@@ -104,6 +122,10 @@ const openEditModal = (food) => {
 };
 
 const handleSubmit = async () => {
+  if (!currentFood.value.storeId) {
+    message.error('请选择一个店铺');
+    return;
+  }
   try {
     if (isEdit.value) {
       await axios.put('/api/food', currentFood.value);
@@ -127,6 +149,11 @@ const handleDelete = async (id) => {
   } catch (error) {
     message.error('菜品删除失败');
   }
+};
+
+const handleUploadFinish = ({ file, event }) => {
+  const responseBody = event.target.response;
+  currentFood.value.imageUrl = responseBody;
 };
 
 onMounted(() => {
