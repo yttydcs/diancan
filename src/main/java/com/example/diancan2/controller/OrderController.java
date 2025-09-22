@@ -6,6 +6,7 @@ import com.example.diancan2.entity.Order;
 import com.example.diancan2.entity.User;
 import com.example.diancan2.mapper.UserStoreMapper;
 import com.example.diancan2.service.OrderService;
+import com.example.diancan2.vo.ApiResponse;
 import org.apache.shiro.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -23,41 +24,37 @@ public class OrderController {
     @Autowired
     private UserStoreMapper userStoreMapper;
 
-    // 创建订单
     @PostMapping
-    public Order createOrder(@RequestBody OrderDTO orderDTO) {
-        return orderService.createOrder(orderDTO);
+    public ApiResponse<Order> createOrder(@RequestBody OrderDTO orderDTO) {
+        return ApiResponse.success("订单创建成功", orderService.createOrder(orderDTO));
     }
 
-    // 获取所有订单
     @GetMapping
-    public List<Order> getAllOrders() {
+    public ApiResponse<List<Order>> getAllOrders() {
         User currentUser = (User) SecurityUtils.getSubject().getPrincipal();
         if (SecurityUtils.getSubject().hasRole("admin")) {
-            return orderService.list();
+            return ApiResponse.success(orderService.list());
         } else {
             List<Long> storeIds = userStoreMapper.findStoreIdsByUserId(currentUser.getId());
             if (storeIds == null || storeIds.isEmpty()) {
-                return Collections.emptyList();
+                return ApiResponse.success(Collections.emptyList());
             }
-            return orderService.list(new QueryWrapper<Order>().in("store_id", storeIds));
+            return ApiResponse.success(orderService.list(new QueryWrapper<Order>().in("store_id", storeIds)));
         }
     }
 
-    // 根据ID获取订单
     @GetMapping("/{id}")
-    public Order getOrderById(@PathVariable Long id) {
-        return orderService.getById(id);
+    public ApiResponse<Order> getOrderById(@PathVariable Long id) {
+        return ApiResponse.success(orderService.getById(id));
     }
 
-    // 更新订单状态
     @PutMapping("/{id}/status")
-    public boolean updateOrderStatus(@PathVariable Long id, @RequestParam Integer status) {
+    public ApiResponse<Boolean> updateOrderStatus(@PathVariable Long id, @RequestParam Integer status) {
         Order order = orderService.getById(id);
         if (order != null) {
             order.setStatus(status);
-            return orderService.updateById(order);
+            return ApiResponse.success("订单状态更新成功", orderService.updateById(order));
         }
-        return false;
+        return ApiResponse.error("订单未找到");
     }
 }

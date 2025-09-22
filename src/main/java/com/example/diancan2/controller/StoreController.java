@@ -5,6 +5,7 @@ import com.example.diancan2.entity.Store;
 import com.example.diancan2.entity.User;
 import com.example.diancan2.mapper.UserStoreMapper;
 import com.example.diancan2.service.StoreService;
+import com.example.diancan2.vo.ApiResponse;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,50 +26,55 @@ public class StoreController {
 
     @GetMapping
     @RequiresPermissions("store:manage")
-    public List<Store> getAllStores() {
+    public ApiResponse<List<Store>> getAllStores() {
         User currentUser = (User) SecurityUtils.getSubject().getPrincipal();
         if (SecurityUtils.getSubject().hasRole("admin")) {
-            return storeService.list();
+            return ApiResponse.success(storeService.list());
         } else {
             List<Long> storeIds = userStoreMapper.findStoreIdsByUserId(currentUser.getId());
             if (storeIds == null || storeIds.isEmpty()) {
-                return Collections.emptyList();
+                return ApiResponse.success(Collections.emptyList());
             }
-            return storeService.list(new QueryWrapper<Store>().in("id", storeIds));
+            return ApiResponse.success(storeService.list(new QueryWrapper<Store>().in("id", storeIds)));
         }
     }
 
     @PostMapping
-    public Store createStore(@RequestBody Store store) {
+    @RequiresPermissions("store:manage")
+    public ApiResponse<Store> createStore(@RequestBody Store store) {
         storeService.save(store);
-        return store;
+        return ApiResponse.success("店铺创建成功", store);
     }
 
     @PutMapping
-    public Store updateStore(@RequestBody Store store) {
+    @RequiresPermissions("store:manage")
+    public ApiResponse<Store> updateStore(@RequestBody Store store) {
         storeService.updateById(store);
-        return store;
+        return ApiResponse.success("店铺更新成功", store);
     }
 
     @DeleteMapping("/{id}")
-    public void deleteStore(@PathVariable Long id) {
+    @RequiresPermissions("store:manage")
+    public ApiResponse<Void> deleteStore(@PathVariable Long id) {
         storeService.removeById(id);
+        return ApiResponse.success("店铺删除成功", null);
     }
 
     @GetMapping("/{id}/managers")
     @RequiresPermissions("store:manage")
-    public List<Long> getStoreManagers(@PathVariable Long id) {
-        return userStoreMapper.findUserIdsByStoreId(id);
+    public ApiResponse<List<Long>> getStoreManagers(@PathVariable Long id) {
+        return ApiResponse.success(userStoreMapper.findUserIdsByStoreId(id));
     }
 
     @PostMapping("/{id}/managers")
     @RequiresPermissions("store:manage")
-    public void updateStoreManagers(@PathVariable Long id, @RequestBody List<Long> userIds) {
+    public ApiResponse<Void> updateStoreManagers(@PathVariable Long id, @RequestBody List<Long> userIds) {
         userStoreMapper.deleteByStoreId(id);
         if (userIds != null && !userIds.isEmpty()) {
             for (Long userId : userIds) {
                 userStoreMapper.insert(userId, id);
             }
         }
+        return ApiResponse.success("店长分配成功", null);
     }
 }

@@ -62,8 +62,8 @@
 
 <script setup>
 import { ref, onMounted, h } from 'vue';
-import axios from 'axios';
-import { useMessage, NButton, NSpace } from 'naive-ui';
+import api from '../api';
+import { NButton, NSpace } from 'naive-ui';
 
 const users = ref([]);
 const showAddModal = ref(false);
@@ -73,7 +73,6 @@ const newUser = ref({ username: '', password: '', roleId: null });
 const currentUser = ref({});
 const newPassword = ref('');
 const roleOptions = ref([]); 
-const message = useMessage();
 
 const columns = [
   { title: 'ID', key: 'id' },
@@ -96,30 +95,28 @@ const columns = [
 
 const fetchUsers = async () => {
   try {
-    const response = await axios.get('/api/user');
-    users.value = response.data;
+    users.value = await api.get('/user');
   } catch (error) {
-    message.error('获取用户列表失败');
+    console.error(error);
   }
 };
 
 const fetchRoles = async () => {
   try {
-    const response = await axios.get('/api/role');
-    roleOptions.value = response.data.map(role => ({ label: role.name, value: role.id }));
+    const roles = await api.get('/role');
+    roleOptions.value = roles.map(role => ({ label: role.name, value: role.id }));
   } catch (error) {
-    message.error('获取角色列表失败');
+    console.error(error);
   }
 };
 
 const handleCreateUser = async () => {
   try {
-    await axios.post('/api/user', newUser.value);
-    message.success('用户创建成功');
+    await api.post('/user', newUser.value);
     showAddModal.value = false;
     fetchUsers();
   } catch (error) {
-    message.error('用户创建失败');
+    console.error(error);
   }
 };
 
@@ -130,12 +127,11 @@ const openEditModal = (user) => {
 
 const handleUpdateUser = async () => {
     try {
-        await axios.put('/api/user', currentUser.value);
-        message.success('用户更新成功');
+        await api.put('/user', currentUser.value);
         showEditModal.value = false;
         fetchUsers();
     } catch (error) {
-        message.error('用户更新失败');
+        console.error(error);
     }
 };
 
@@ -147,21 +143,19 @@ const openResetPasswordModal = (user) => {
 
 const handleResetPassword = async () => {
     try {
-        await axios.post(`/api/user/${currentUser.value.id}/reset-password`, { password: newPassword.value });
-        message.success('密码重置成功');
+        await api.post(`/user/${currentUser.value.id}/reset-password`, { password: newPassword.value });
         showResetPasswordModal.value = false;
     } catch (error) {
-        message.error('密码重置失败');
+        console.error(error);
     }
 };
 
 const handleDeleteUser = async (id) => {
     try {
-        await axios.delete(`/api/user/${id}`);
-        message.success('用户删除成功');
+        await api.delete(`/user/${id}`);
         fetchUsers();
     } catch (error) {
-        message.error('用户删除失败');
+        console.error(error);
     }
 };
 

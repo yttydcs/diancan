@@ -45,8 +45,8 @@
 
 <script setup>
 import { ref, onMounted, h } from 'vue';
-import axios from 'axios';
-import { useMessage, NButton, NSpace } from 'naive-ui';
+import api from '../api';
+import { NButton, NSpace } from 'naive-ui';
 
 const stores = ref([]);
 const showModal = ref(false);
@@ -55,7 +55,6 @@ const currentStore = ref({ name: '', address: '' });
 const showManagerModal = ref(false);
 const managerOptions = ref([]);
 const selectedManagers = ref([]);
-const message = useMessage();
 
 const columns = [
   { title: 'ID', key: 'id' },
@@ -78,21 +77,20 @@ const columns = [
 
 const fetchStores = async () => {
   try {
-    const response = await axios.get('/api/store');
-    stores.value = response.data;
+    stores.value = await api.get('/store');
   } catch (error) {
-    message.error('获取店铺列表失败');
+    console.error(error);
   }
 };
 
 const fetchManagers = async () => {
     try {
-        const response = await axios.get('/api/user');
-        managerOptions.value = response.data
+        const users = await api.get('/user');
+        managerOptions.value = users
             .filter(user => user.roleId === 2) // 假设 2 是 manager 的 roleId
             .map(user => ({ label: user.username, value: user.id }));
     } catch (error) {
-        message.error('获取店长列表失败');
+        console.error(error);
     }
 };
 
@@ -111,47 +109,42 @@ const openEditModal = (store) => {
 const openManagerModal = async (store) => {
     currentStore.value = store;
     try {
-        const response = await axios.get(`/api/store/${store.id}/managers`);
-        selectedManagers.value = response.data;
+        selectedManagers.value = await api.get(`/store/${store.id}/managers`);
         showManagerModal.value = true;
     } catch (error) {
-        message.error('获取当前店长失败');
+        console.error(error);
     }
 };
 
 const handleSubmit = async () => {
   try {
     if (isEdit.value) {
-      await axios.put('/api/store', currentStore.value);
-      message.success('店铺更新成功');
+      await api.put('/store', currentStore.value);
     } else {
-      await axios.post('/api/store', currentStore.value);
-      message.success('店铺创建成功');
+      await api.post('/store', currentStore.value);
     }
     showModal.value = false;
     fetchStores();
   } catch (error) {
-    message.error('操作失败');
+    console.error(error);
   }
 };
 
 const handleAssignManagers = async () => {
     try {
-        await axios.post(`/api/store/${currentStore.value.id}/managers`, selectedManagers.value);
-        message.success('店长分配成功');
+        await api.post(`/store/${currentStore.value.id}/managers`, selectedManagers.value);
         showManagerModal.value = false;
     } catch (error) {
-        message.error('店长分配失败');
+        console.error(error);
     }
 };
 
 const handleDeleteStore = async (id) => {
   try {
-    await axios.delete(`/api/store/${id}`);
-    message.success('店铺删除成功');
+    await api.delete(`/store/${id}`);
     fetchStores();
   } catch (error) {
-    message.error('店铺删除失败');
+    console.error(error);
   }
 };
 

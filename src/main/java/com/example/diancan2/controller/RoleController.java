@@ -2,6 +2,7 @@ package com.example.diancan2.controller;
 
 import com.example.diancan2.entity.Role;
 import com.example.diancan2.mapper.RoleMapper;
+import com.example.diancan2.vo.ApiResponse;
 import org.apache.shiro.authz.annotation.RequiresRoles;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,7 +20,7 @@ public class RoleController {
     private RoleMapper roleMapper;
 
     @GetMapping
-    public List<Role> getAllRoles() {
-        return roleMapper.selectList(null);
+    public ApiResponse<List<Role>> getAllRoles() {
+        return ApiResponse.success(roleMapper.selectList(null));
     }
 }

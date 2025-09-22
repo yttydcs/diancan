@@ -44,8 +44,8 @@
 
 <script setup>
 import { ref, onMounted, h } from 'vue';
-import axios from 'axios';
-import { useMessage, NButton, NSpace, NImage } from 'naive-ui';
+import api from '../api';
+import { NButton, NSpace, NImage } from 'naive-ui';
 
 const foods = ref([]);
 const showModal = ref(false);
@@ -59,7 +59,6 @@ const currentFood = ref({
   imageUrl: '',
 });
 const storeOptions = ref([]);
-const message = useMessage();
 
 const columns = [
   { title: 'ID', key: 'id' },
@@ -90,22 +89,21 @@ const columns = [
 
 const fetchFoods = async () => {
   try {
-    const response = await axios.get('/api/food');
-    foods.value = response.data;
+    foods.value = await api.get('/food');
   } catch (error) {
-    message.error('获取菜品列表失败');
+    console.error(error);
   }
 };
 
 const fetchStores = async () => {
   try {
-    const response = await axios.get('/api/store');
-    storeOptions.value = response.data.map(store => ({
+    const stores = await api.get('/store');
+    storeOptions.value = stores.map(store => ({
       label: store.name,
       value: store.id,
     }));
   } catch (error) {
-    message.error('获取店铺列表失败');
+    console.error(error);
   }
 };
 
@@ -123,37 +121,36 @@ const openEditModal = (food) => {
 
 const handleSubmit = async () => {
   if (!currentFood.value.storeId) {
-    message.error('请选择一个店铺');
+    alert('请选择一个店铺');
     return;
   }
   try {
     if (isEdit.value) {
-      await axios.put('/api/food', currentFood.value);
-      message.success('菜品更新成功');
+      await api.put('/food', currentFood.value);
     } else {
-      await axios.post('/api/food', currentFood.value);
-      message.success('菜品创建成功');
+      await api.post('/food', currentFood.value);
     }
     showModal.value = false;
     fetchFoods();
   } catch (error) {
-    message.error('操作失败');
+    console.error(error);
   }
 };
 
 const handleDelete = async (id) => {
   try {
-    await axios.delete(`/api/food/${id}`);
-    message.success('菜品删除成功');
+    await api.delete(`/food/${id}`);
     fetchFoods();
   } catch (error) {
-    message.error('菜品删除失败');
+    console.error(error);
   }
 };
 
 const handleUploadFinish = ({ file, event }) => {
-  const responseBody = event.target.response;
-  currentFood.value.imageUrl = responseBody;
+  const response = JSON.parse(event.target.response);
+  if (response.status) {
+    currentFood.value.imageUrl = response.data;
+  }
 };
 
 onMounted(() => {

@@ -1,5 +1,6 @@
 package com.example.diancan2.controller;
 
+import com.example.diancan2.vo.ApiResponse;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,9 +18,9 @@ public class FileController {
     private final String uploadDir = "src/main/resources/static/images/";
 
     @PostMapping("/upload")
-    public String uploadFile(@RequestParam("file") MultipartFile file) {
+    public ApiResponse<String> uploadFile(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
-            return "File is empty";
+            return ApiResponse.error("文件为空");
         }
         try {
             File dir = new File(uploadDir);
@@ -33,10 +34,11 @@ public class FileController {
             File dest = new File(dir.getAbsolutePath() + File.separator + newFileName);
             file.transferTo(dest);
             
-            return "/images/" + newFileName;
+            String filePath = "/images/" + newFileName;
+            return ApiResponse.success("上传成功", filePath);
         } catch (IOException e) {
             e.printStackTrace();
-            return "Failed to upload file";
+            return ApiResponse.error("上传失败");
         }
     }
 }

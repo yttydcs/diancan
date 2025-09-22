@@ -5,6 +5,7 @@ import com.example.diancan2.entity.Seat;
 import com.example.diancan2.entity.User;
 import com.example.diancan2.mapper.UserStoreMapper;
 import com.example.diancan2.service.SeatService;
+import com.example.diancan2.vo.ApiResponse;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
 import com.google.zxing.WriterException;
@@ -16,21 +17,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.imageio.ImageIO;
-import java.util.Collections;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
 
-/**
- * <p>
- *  前端控制器
- * </p>
- *
- * @author author
- * @since 2024-07-29
- */
 @RestController
 @RequestMapping("/api/seat")
 public class SeatController {
@@ -41,54 +34,50 @@ public class SeatController {
     @Autowired
     private UserStoreMapper userStoreMapper;
 
-    // 获取所有座位
     @GetMapping
-    public List<Seat> getAllSeats() {
+    public ApiResponse<List<Seat>> getAllSeats() {
         User currentUser = (User) SecurityUtils.getSubject().getPrincipal();
         if (SecurityUtils.getSubject().hasRole("admin")) {
-            return seatService.list();
+            return ApiResponse.success(seatService.list());
         } else {
             List<Long> storeIds = userStoreMapper.findStoreIdsByUserId(currentUser.getId());
             if (storeIds == null || storeIds.isEmpty()) {
-                return Collections.emptyList();
+                return ApiResponse.success(Collections.emptyList());
             }
-            return seatService.list(new QueryWrapper<Seat>().in("store_id", storeIds));
+            return ApiResponse.success(seatService.list(new QueryWrapper<Seat>().in("store_id", storeIds)));
         }
     }
 
-    // 根据ID获取座位
     @GetMapping("/{id}")
-    public Seat getSeatById(@PathVariable Long id) {
-        return seatService.getById(id);
+    public ApiResponse<Seat> getSeatById(@PathVariable Long id) {
+        return ApiResponse.success(seatService.getById(id));
     }
 
-    // 新增座位
     @PostMapping
-    public boolean addSeat(@RequestBody Seat seat) {
-        return seatService.save(seat);
+    public ApiResponse<Seat> addSeat(@RequestBody Seat seat) {
+        seatService.save(seat);
+        return ApiResponse.success("座位创建成功", seat);
     }
 
-    // 更新座位信息
     @PutMapping
-    public boolean updateSeat(@RequestBody Seat seat) {
-        return seatService.updateById(seat);
+    public ApiResponse<Seat> updateSeat(@RequestBody Seat seat) {
+        seatService.updateById(seat);
+        return ApiResponse.success("座位更新成功", seat);
     }
 
-    // 删除座位
     @DeleteMapping("/{id}")
-    public boolean deleteSeat(@PathVariable Long id) {
-        return seatService.removeById(id);
+    public ApiResponse<Void> deleteSeat(@PathVariable Long id) {
+        seatService.removeById(id);
+        return ApiResponse.success("座位删除成功", null);
     }
 
-    // 生成二维码
     @GetMapping("/qrcode/{id}")
-    public String generateQRCode(@PathVariable Long id) throws WriterException, IOException {
+    public ApiResponse<String> generateQRCode(@PathVariable Long id) throws WriterException, IOException {
         Seat seat = seatService.getById(id);
         if (seat == null) {
-            return "Seat not found";
+            return ApiResponse.error("座位未找到");
         }
 
-        // 这里我假设小程序/H5页面的URL是 "http://your_domain/order?seatId="
         String url = "http://your_domain/order?seatId=" + id;
         int width = 300;
         int height = 300;
@@ -102,11 +91,10 @@ public class SeatController {
         MatrixToImageWriter.writeToStream(bitMatrix, "PNG", pngOutputStream);
         byte[] pngData = pngOutputStream.toByteArray();
 
-        // 更新座位信息中的二维码
         String qrCodeBase64 = Base64.getEncoder().encodeToString(pngData);
         seat.setQrCode(qrCodeBase64);
         seatService.updateById(seat);
 
-        return qrCodeBase64;
+        return ApiResponse.success("二维码生成成功", qrCodeBase64);
     }
 }
