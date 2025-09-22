@@ -1,6 +1,9 @@
 package com.example.diancan2.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.diancan2.entity.Seat;
+import com.example.diancan2.entity.User;
+import com.example.diancan2.mapper.UserStoreMapper;
 import com.example.diancan2.service.SeatService;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
@@ -8,10 +11,12 @@ import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
+import org.apache.shiro.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.imageio.ImageIO;
+import java.util.Collections;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Base64;
@@ -33,10 +38,22 @@ public class SeatController {
     @Autowired
     private SeatService seatService;
 
+    @Autowired
+    private UserStoreMapper userStoreMapper;
+
     // 获取所有座位
     @GetMapping
     public List<Seat> getAllSeats() {
-        return seatService.list();
+        User currentUser = (User) SecurityUtils.getSubject().getPrincipal();
+        if (SecurityUtils.getSubject().hasRole("admin")) {
+            return seatService.list();
+        } else {
+            List<Long> storeIds = userStoreMapper.findStoreIdsByUserId(currentUser.getId());
+            if (storeIds == null || storeIds.isEmpty()) {
+                return Collections.emptyList();
+            }
+            return seatService.list(new QueryWrapper<Seat>().in("store_id", storeIds));
+        }
     }
 
     // 根据ID获取座位

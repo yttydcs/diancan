@@ -1,10 +1,15 @@
 package com.example.diancan2.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.diancan2.entity.Food;
+import com.example.diancan2.entity.User;
+import com.example.diancan2.mapper.UserStoreMapper;
 import com.example.diancan2.service.FoodService;
+import org.apache.shiro.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -22,10 +27,22 @@ public class FoodController {
     @Autowired
     private FoodService foodService;
 
+    @Autowired
+    private UserStoreMapper userStoreMapper;
+
     // 获取所有菜品
     @GetMapping
     public List<Food> getAllFoods() {
-        return foodService.list();
+        User currentUser = (User) SecurityUtils.getSubject().getPrincipal();
+        if (SecurityUtils.getSubject().hasRole("admin")) {
+            return foodService.list();
+        } else {
+            List<Long> storeIds = userStoreMapper.findStoreIdsByUserId(currentUser.getId());
+            if (storeIds == null || storeIds.isEmpty()) {
+                return Collections.emptyList();
+            }
+            return foodService.list(new QueryWrapper<Food>().in("store_id", storeIds));
+        }
     }
 
     // 根据ID获取菜品
