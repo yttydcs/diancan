@@ -32,6 +32,16 @@ public class Order implements Serializable {
     private Long storeId;
 
     /**
+     * 顾客ID
+     */
+    private Long customerId;
+
+    /**
+     * 订单来源 0: 顾客自主下单, 1: 店员代客下单
+     */
+    private Integer source;
+
+    /**
      * 总价
      */
     private BigDecimal totalPrice;

@@ -74,8 +74,10 @@ CREATE TABLE IF NOT EXISTS "order" (
     id SERIAL PRIMARY KEY,
     seat_id INT,
     store_id INT,
+    customer_id INT,
     total_price DECIMAL(10, 2),
     status INT,
+    source INT, -- 0: 顾客自主下单, 1: 店员代客下单
     create_time TIMESTAMP,
     FOREIGN KEY (seat_id) REFERENCES seat(id),
     FOREIGN KEY (store_id) REFERENCES store(id)
