@@ -1,8 +1,11 @@
 package com.example.diancan2.controller;
 
 import com.example.diancan2.entity.User;
+import com.example.diancan2.mapper.PermissionMapper;
+import com.example.diancan2.mapper.RoleMapper;
 import com.example.diancan2.service.UserService;
 import com.example.diancan2.vo.ApiResponse;
+import com.example.diancan2.vo.LoginVO;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
@@ -24,14 +28,31 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+    @Autowired
+    private RoleMapper roleMapper;
+    @Autowired
+    private PermissionMapper permissionMapper;
 
     @PostMapping("/login")
-    public ApiResponse<String> login(@RequestBody User user) {
+    public ApiResponse<LoginVO> login(@RequestBody User user) {
         Subject subject = SecurityUtils.getSubject();
         UsernamePasswordToken token = new UsernamePasswordToken(user.getUsername(), user.getPassword());
         try {
             subject.login(token);
-            return ApiResponse.success("登录成功", null);
+            User currentUser = (User) subject.getPrincipal();
+            
+            LoginVO loginVO = new LoginVO();
+            loginVO.setUsername(currentUser.getUsername());
+            
+            Set<String> roles = roleMapper.findRolesByUserId(currentUser.getId());
+            loginVO.setRoles(roles);
+            
+            if (currentUser.getRoleId() != null) {
+                Set<String> permissions = permissionMapper.findPermissionsByRoleId(currentUser.getRoleId());
+                loginVO.setPermissions(permissions);
+            }
+            
+            return ApiResponse.success("登录成功", loginVO);
         } catch (Exception e) {
             return ApiResponse.error("登录失败，请检查用户名和密码");
         }

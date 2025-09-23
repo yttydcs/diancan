@@ -17,32 +17,22 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
-import { useMessage } from 'naive-ui';
+import api from '../api';
+import store from '../store';
 
 const username = ref('');
 const password = ref('');
 const router = useRouter();
-const message = useMessage();
-
 
 const handleLogin = async () => {
-  if (!username.value || !password.value) {
-    message.error('用户名和密码不能为空');
-    return;
-  }
   try {
-    const response = await axios.post('/api/user/login', {
+    const userData = await api.post('/user/login', {
       username: username.value,
       password: password.value,
     });
-    if (response.status === 200) {
-      sessionStorage.setItem('user', username.value);
-      message.success('登录成功');
-      router.push('/');
-    }
+    store.setUser(userData);
+    router.push('/');
   } catch (error) {
-    message.error('登录失败，请检查用户名和密码');
     console.error(error);
   }
 };

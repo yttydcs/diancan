@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import axios from 'axios';
+import api from './api';
+import store from './store';
 import Layout from './components/Layout.vue';
 import Login from './components/Login.vue';
 import SeatManagement from './components/SeatManagement.vue';
@@ -30,19 +31,11 @@ const router = createRouter({
     routes,
 });
 
-axios.interceptors.response.use(response => {
-    return response;
-}, error => {
-    if (error.response && error.response.status === 401) {
-        sessionStorage.removeItem('user');
-        router.push('/login');
-    }
-    return Promise.reject(error);
-});
+// The interceptor is now in api.js and initialized in MessageApi.vue
+// No need for it here anymore.
 
 router.beforeEach((to, from, next) => {
-    const loggedIn = sessionStorage.getItem('user');
-    if (to.matched.some(record => record.meta.requiresAuth) && !loggedIn) {
+    if (to.matched.some(record => record.meta.requiresAuth) && !store.user) {
         next({ name: 'Login' });
     } else {
         next();

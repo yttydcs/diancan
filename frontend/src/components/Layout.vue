@@ -35,6 +35,7 @@
 import { ref, h, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { NIcon } from 'naive-ui';
+import store from '../store';
 import {
   RestaurantOutline as SeatIcon,
   FastFoodOutline as FoodIcon,
@@ -52,16 +53,18 @@ const route = useRoute();
 const collapsed = ref(false);
 const activeKey = computed(() => route.name);
 
-const menuOptions = [
+const allMenuOptions = [
     {
         label: '用户管理',
         key: 'user-management',
         icon: renderIcon(UserIcon),
+        permission: 'user:manage',
     },
     {
         label: '店铺管理',
         key: 'store-management',
         icon: renderIcon(StoreIcon),
+        permission: 'store:manage',
     },
     {
         type: 'divider',
@@ -84,12 +87,21 @@ const menuOptions = [
     },
 ];
 
+const menuOptions = computed(() => {
+    return allMenuOptions.filter(option => {
+        if (option.permission) {
+            return store.hasPermission(option.permission);
+        }
+        return true;
+    });
+});
+
 const handleMenuSelect = (key) => {
   router.push({ name: key });
 };
 
 const handleLogout = () => {
-    sessionStorage.removeItem('user');
+    store.setUser(null);
     router.push('/login');
 }
 </script>

@@ -2,13 +2,16 @@ package com.example.diancan2.common;
 
 import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
 import org.apache.shiro.mgt.SecurityManager;
+import org.apache.shiro.mgt.SessionsSecurityManager;
 import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
-import org.apache.shiro.spring.web.config.DefaultShiroFilterChainDefinition;
-import org.apache.shiro.spring.web.config.ShiroFilterChainDefinition;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import jakarta.servlet.Filter;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Configuration
 public class ShiroConfig {
@@ -20,60 +23,57 @@ public class ShiroConfig {
         return userRealm;
     }
 
-    /**
-     * SecurityManager 配置
-     */
     @Bean
-    public SecurityManager securityManager() {
+    public SessionsSecurityManager securityManager() {
         DefaultWebSecurityManager securityManager = new DefaultWebSecurityManager();
         securityManager.setRealm(userRealm());
         return securityManager;
     }
 
-    /**
-     * 使用标准 ShiroFilterChainDefinition 来定义过滤规则
-     */
     @Bean
-    public ShiroFilterChainDefinition shiroFilterChainDefinition() {
-        DefaultShiroFilterChainDefinition chainDefinition = new DefaultShiroFilterChainDefinition();
+    public ShiroFilterFactoryBean shiroFilterFactoryBean(SecurityManager securityManager) {
+        ShiroFilterFactoryBean shiroFilterFactoryBean = new ShiroFilterFactoryBean();
+        shiroFilterFactoryBean.setSecurityManager(securityManager);
 
+        // 添加自定义的过滤器
+        Map<String, Filter> filters = new LinkedHashMap<>();
+        filters.put("jsonAuthc", new JsonAuthenticationFilter());
+        shiroFilterFactoryBean.setFilters(filters);
+
+        Map<String, String> filterChainDefinitionMap = new LinkedHashMap<>();
         // 公开接口
-        chainDefinition.addPathDefinition("/api/user/login", "anon");
+        filterChainDefinitionMap.put("/api/user/login", "anon");
 
         // 权限管理
-        chainDefinition.addPathDefinition("/api/user/**", "authc, perms[user:manage]");
-        chainDefinition.addPathDefinition("/api/role/**", "authc, perms[user:manage]");
-        chainDefinition.addPathDefinition("/api/store/**", "authc, perms[store:manage]");
+        filterChainDefinitionMap.put("/api/user/**", "jsonAuthc, perms[user:manage]");
+        filterChainDefinitionMap.put("/api/role/**", "jsonAuthc, perms[user:manage]");
+        filterChainDefinitionMap.put("/api/store/**", "jsonAuthc, perms[store:manage]");
 
         // 业务管理
-        chainDefinition.addPathDefinition("/api/seat/**", "authc");
-        chainDefinition.addPathDefinition("/api/food/**", "authc");
-        chainDefinition.addPathDefinition("/api/order/**", "authc");
+        filterChainDefinitionMap.put("/api/seat/**", "jsonAuthc");
+        filterChainDefinitionMap.put("/api/food/**", "jsonAuthc");
+        filterChainDefinitionMap.put("/api/order/**", "jsonAuthc");
+        filterChainDefinitionMap.put("/api/file/**", "jsonAuthc");
 
-        // 其他所有请求都放行
-        chainDefinition.addPathDefinition("/**", "anon");
+        // 其他所有请求（包括前端路由和静态资源）都放行
+        filterChainDefinitionMap.put("/**", "anon");
 
-        return chainDefinition;
+        shiroFilterFactoryBean.setFilterChainDefinitionMap(filterChainDefinitionMap);
+        return shiroFilterFactoryBean;
     }
 
-    /**
-     * 密码加密配置
-     */
     @Bean
     public HashedCredentialsMatcher hashedCredentialsMatcher() {
-        HashedCredentialsMatcher matcher = new HashedCredentialsMatcher();
-        matcher.setHashAlgorithmName("md5");
-        matcher.setHashIterations(2);
-        return matcher;
+        HashedCredentialsMatcher hashedCredentialsMatcher = new HashedCredentialsMatcher();
+        hashedCredentialsMatcher.setHashAlgorithmName("md5");
+        hashedCredentialsMatcher.setHashIterations(2);
+        return hashedCredentialsMatcher;
     }
 
-    /**
-     * 开启 Shiro 注解支持，比如 @RequiresRoles, @RequiresPermissions
-     */
     @Bean
     public AuthorizationAttributeSourceAdvisor authorizationAttributeSourceAdvisor(SecurityManager securityManager) {
-        AuthorizationAttributeSourceAdvisor advisor = new AuthorizationAttributeSourceAdvisor();
-        advisor.setSecurityManager(securityManager);
-        return advisor;
+        AuthorizationAttributeSourceAdvisor authorizationAttributeSourceAdvisor = new AuthorizationAttributeSourceAdvisor();
+        authorizationAttributeSourceAdvisor.setSecurityManager(securityManager);
+        return authorizationAttributeSourceAdvisor;
     }
 }
