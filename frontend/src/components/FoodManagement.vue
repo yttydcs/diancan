@@ -27,11 +27,13 @@
             <n-upload
               action="/api/file/upload"
               :default-upload="true"
+              :with-credentials="true"
+              accept="image/*"
               @finish="handleUploadFinish"
             >
               <n-button>上传图片</n-button>
             </n-upload>
-            <n-image v-if="currentFood.imageUrl" :src="currentFood.imageUrl" width="100" style="margin-top: 10px;" />
+            <n-image v-if="currentFood.imageUrl" :src="toImageUrl(currentFood.imageUrl)" width="100" style="margin-top: 10px;" />
           </n-form-item>
         </n-form>
         <template #footer>
@@ -46,6 +48,7 @@
 import { ref, onMounted, h } from 'vue';
 import api from '../api';
 import { NButton, NSpace, NImage } from 'naive-ui';
+import { toImageUrl } from '../config';
 
 const foods = ref([]);
 const showModal = ref(false);
@@ -67,7 +70,7 @@ const columns = [
     title: '图片',
     key: 'imageUrl',
     render(row) {
-      return h(NImage, { src: row.imageUrl, width: "50" });
+      return h(NImage, { src: toImageUrl(row.imageUrl), width: '50' });
     },
   },
   { title: '价格', key: 'price' },
@@ -147,9 +150,17 @@ const handleDelete = async (id) => {
 };
 
 const handleUploadFinish = ({ file, event }) => {
-  const response = JSON.parse(event.target.response);
-  if (response.status) {
-    currentFood.value.imageUrl = response.data;
+  try {
+    const raw = file?.response ?? event?.target?.response;
+    if (!raw) return;
+    const res = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (res && res.status) {
+      currentFood.value.imageUrl = res.data; // 后端现在返回相对路径 /images/xxx
+    } else {
+      console.error('上传失败:', res?.message || '未知错误');
+    }
+  } catch (e) {
+    console.error('解析上传响应失败', e);
   }
 };
 

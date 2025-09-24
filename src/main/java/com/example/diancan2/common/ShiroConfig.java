@@ -43,6 +43,13 @@ public class ShiroConfig {
         Map<String, String> filterChainDefinitionMap = new LinkedHashMap<>();
         // 公开接口
         filterChainDefinitionMap.put("/api/user/login", "anon");
+        filterChainDefinitionMap.put("/api/seat/customer/**", "anon");
+        filterChainDefinitionMap.put("/api/store/customer/**", "anon");
+        // 新增：小程序查询菜品开放
+        filterChainDefinitionMap.put("/api/food/customer/**", "anon");
+        // 兼容：保留原 /api/food GET 匿名（仅限此路径，不含子路径）
+        filterChainDefinitionMap.put("/api/food", "anon");
+
 
         // 权限管理
         filterChainDefinitionMap.put("/api/user/**", "jsonAuthc, perms[user:manage]");

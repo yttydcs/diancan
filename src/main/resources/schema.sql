@@ -83,13 +83,18 @@ CREATE TABLE IF NOT EXISTS "order" (
     FOREIGN KEY (store_id) REFERENCES store(id)
 );
 
--- 订单项表
+-- 如果历史数据库中已存在外键约束，先删除它
+ALTER TABLE IF EXISTS order_item DROP CONSTRAINT IF EXISTS order_item_food_id_fkey;
+
+-- 订单项表（去掉对 food_id 的外键约束）
 CREATE TABLE IF NOT EXISTS order_item (
     id SERIAL PRIMARY KEY,
     order_id INT,
     food_id INT,
     quantity INT,
     price DECIMAL(10, 2),
-    FOREIGN KEY (order_id) REFERENCES "order"(id),
-    FOREIGN KEY (food_id) REFERENCES food(id)
+    FOREIGN KEY (order_id) REFERENCES "order"(id)
 );
+
+-- 可选：为查询性能添加索引（即使没有外键，也建议索引外键列）
+CREATE INDEX IF NOT EXISTS idx_order_item_food_id ON order_item(food_id);

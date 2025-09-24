@@ -53,6 +53,11 @@ public class SeatController {
         return ApiResponse.success(seatService.getById(id));
     }
 
+    @GetMapping("/customer/{id}")
+    public ApiResponse<Seat> getSeatByIdForCustomer(@PathVariable Long id) {
+        return ApiResponse.success(seatService.getById(id));
+    }
+
     @PostMapping
     public ApiResponse<Seat> addSeat(@RequestBody Seat seat) {
         seatService.save(seat);

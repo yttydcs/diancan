@@ -7,7 +7,10 @@ import com.example.diancan2.mapper.UserStoreMapper;
 import com.example.diancan2.service.FoodService;
 import com.example.diancan2.vo.ApiResponse;
 import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.subject.Subject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
@@ -23,17 +26,33 @@ public class FoodController {
     @Autowired
     private UserStoreMapper userStoreMapper;
 
+    // 公开接口：小程序端按店铺查询
+    @GetMapping("/customer")
+    public ApiResponse<List<Food>> getFoodsForCustomer(@RequestParam Long storeId) {
+        return ApiResponse.success(foodService.list(new QueryWrapper<Food>().eq("store_id", storeId)));
+    }
+
     @GetMapping
-    public ApiResponse<List<Food>> getAllFoods() {
-        User currentUser = (User) SecurityUtils.getSubject().getPrincipal();
-        if (SecurityUtils.getSubject().hasRole("admin")) {
-            return ApiResponse.success(foodService.list());
+    public ResponseEntity<ApiResponse<List<Food>>> getAllFoods(@RequestParam(required = false) Long storeId) {
+        // 若显式传入 storeId，沿用旧行为（兼容性），但推荐改用 /api/food/customer
+        if (storeId != null) {
+            return ResponseEntity.ok(ApiResponse.success(foodService.list(new QueryWrapper<Food>().eq("store_id", storeId))));
+        }
+
+        Subject subject = SecurityUtils.getSubject();
+        User currentUser = (subject != null) ? (User) subject.getPrincipal() : null;
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error("未登录"));
+        }
+
+        if (subject.hasRole("admin")) {
+            return ResponseEntity.ok(ApiResponse.success(foodService.list()));
         } else {
             List<Long> storeIds = userStoreMapper.findStoreIdsByUserId(currentUser.getId());
             if (storeIds == null || storeIds.isEmpty()) {
-                return ApiResponse.success(Collections.emptyList());
+                return ResponseEntity.ok(ApiResponse.success(Collections.emptyList()));
             }
-            return ApiResponse.success(foodService.list(new QueryWrapper<Food>().in("store_id", storeIds)));
+            return ResponseEntity.ok(ApiResponse.success(foodService.list(new QueryWrapper<Food>().in("store_id", storeIds))));
         }
     }
 

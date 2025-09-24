@@ -25,7 +25,6 @@ public class StoreController {
     private UserStoreMapper userStoreMapper;
 
     @GetMapping
-    @RequiresPermissions("store:manage")
     public ApiResponse<List<Store>> getAllStores() {
         User currentUser = (User) SecurityUtils.getSubject().getPrincipal();
         if (SecurityUtils.getSubject().hasRole("admin")) {
@@ -37,6 +36,16 @@ public class StoreController {
             }
             return ApiResponse.success(storeService.list(new QueryWrapper<Store>().in("id", storeIds)));
         }
+    }
+    
+    @GetMapping("/{id}")
+    public ApiResponse<Store> getStoreById(@PathVariable Long id) {
+        return ApiResponse.success(storeService.getById(id));
+    }
+
+    @GetMapping("/customer/{id}")
+    public ApiResponse<Store> getStoreByIdForCustomer(@PathVariable Long id) {
+        return ApiResponse.success(storeService.getById(id));
     }
 
     @PostMapping
