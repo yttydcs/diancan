@@ -44,7 +44,7 @@
 
     <view class="cart-bar safe-bottom">
       <text class="total">总计: ¥{{ totalPrice }}</text>
-      <button class="checkout-btn" @click="goToConfirm">去结算</button>
+      <button class="checkout-btn" @click="goToConfirm">结算</button>
     </view>
   </view>
 </template>
@@ -163,13 +163,33 @@ const onFoodScroll = (e) => {
 .food-actions { display: flex; align-items: center; gap: 12rpx; }
 .quantity { min-width: 40rpx; text-align: center; color: var(--text); }
 
-/* 扁平化按钮：直角、无阴影，可描边 */
-.btn { width: 56rpx; height: 56rpx; line-height: 56rpx; text-align: center; border-radius: 0; border: 1rpx solid var(--border); background: #ffffff; color: #374151; }
+/* 扁平化按钮：直角、无阴影，可描边（修复小宽度下水平不居中） */
+.btn {
+  width: 56rpx;
+  height: 56rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-sizing: border-box;
+  line-height: 1; /* 避免字体行高影响居中 */
+  text-align: center;
+  border-radius: 0;
+  border: 1rpx solid var(--border);
+  background: #ffffff;
+  color: #374151;
+  font-size: 32rpx; /* 提升可读性并更易居中 */
+  font-weight: 600;
+}
 .btn.plus { background: var(--primary); color: #ffffff; border-color: var(--primary); }
+/* 移除 uni-app 默认按钮伪元素边框，避免视觉偏移 */
+.btn::after { border: none; }
 
 /* 底部栏扁平化：去阴影，添加上边框 */
-.cart-bar { display: flex; justify-content: space-between; align-items: center; padding: 20rpx 24rpx; background: var(--card); box-shadow: none; border-top: 1rpx solid var(--border); }
+.cart-bar { display: flex; justify-content: space-between; align-items: center; padding: 20rpx 0 20rpx 24rpx; background: var(--card); box-shadow: none; border-top: 1rpx solid var(--border); margin-right: -8rpx; min-height: 96rpx; }
 .safe-bottom { padding-bottom: constant(safe-area-inset-bottom); padding-bottom: env(safe-area-inset-bottom); }
 .total { font-size: 30rpx; font-weight: 600; color: var(--text); }
-.checkout-btn { background: var(--primary); color: white; padding: 20rpx 32rpx; border-radius: 0; border: none; font-size: 28rpx; }
+.checkout-btn { background: var(--primary); color: white; /* 按钮内容垂直/水平居中 */ display: inline-flex; align-items: center; justify-content: center; /* 固定高度、去除行高影响 */ height: 72rpx; padding: 0 32rpx; line-height: normal; border-radius: 0; border: none; font-size: 28rpx; margin-left: auto; margin-right: 16rpx; }
+/* 移除 uni-app 默认按钮伪元素边框（各端可能存在） */
+.checkout-btn::after { border: none; }
 </style>
