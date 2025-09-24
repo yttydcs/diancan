@@ -1,10 +1,10 @@
 <template>
   <view class="container">
-    <view class="store-info">
-      <text class="store-name">{{ store.name }}</text>
-      <text>桌号: {{ seat.seatNumber }}</text>
+    <view class="store-info card">
+      <text class="store-name">{{ store.name || '店铺' }}</text>
+      <text class="store-seat">桌号: {{ seat.seatNumber || '-' }}</text>
     </view>
-    
+
     <view class="menu-content">
       <scroll-view scroll-y class="category-list">
         <view 
@@ -14,38 +14,43 @@
           :class="{ active: activeCategory === category }"
           @click="scrollToCategory(category)"
         >
-          {{ category }}
+          <text class="category-dot" />
+          <text class="category-text">{{ category }}</text>
         </view>
       </scroll-view>
-      
-      <scroll-view scroll-y class="food-list" @scroll="onFoodScroll">
-        <view v-for="category in categories" :key="category" :id="'category-' + category">
+
+      <scroll-view scroll-y class="food-list" :scroll-into-view="activeCategoryId" @scroll="onFoodScroll">
+        <view v-for="category in categories" :key="category" :id="'category-' + category" class="category-section">
           <view class="category-title">{{ category }}</view>
-          <view v-for="food in foodsByCategory[category]" :key="food.id" class="food-item">
-            <image :src="toImageUrl(food.imageUrl)" class="food-image" />
+
+          <view v-for="food in foodsByCategory[category]" :key="food.id" class="food-item card">
+            <image :src="toImageUrl(food.imageUrl)" class="food-image" mode="aspectFill" />
             <view class="food-details">
               <text class="food-name">{{ food.name }}</text>
-              <text class="food-price">¥{{ food.price }}</text>
-            </view>
-            <view class="food-actions">
-              <button v-if="cart[food.id]" @click="decrement(food)">-</button>
-              <text v-if="cart[food.id]">{{ cart[food.id].quantity }}</text>
-              <button @click="increment(food)">+</button>
+              <text class="food-desc" v-if="food.description">{{ food.description }}</text>
+              <view class="food-meta">
+                <text class="food-price">¥{{ food.price }}</text>
+                <view class="food-actions">
+                  <button v-if="cart[food.id]" class="btn minus" @click="decrement(food)">-</button>
+                  <text v-if="cart[food.id]" class="quantity">{{ cart[food.id].quantity }}</text>
+                  <button class="btn plus" @click="increment(food)">+</button>
+                </view>
+              </view>
             </view>
           </view>
         </view>
       </scroll-view>
     </view>
 
-    <view class="cart-bar">
-      <text>总计: ¥{{ totalPrice }}</text>
-      <button @click="goToConfirm">去结算</button>
+    <view class="cart-bar safe-bottom">
+      <text class="total">总计: ¥{{ totalPrice }}</text>
+      <button class="checkout-btn" @click="goToConfirm">去结算</button>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { toImageUrl, apiUrl } from '../../utils/config';
 
@@ -56,17 +61,16 @@ const cart = ref({});
 const activeCategory = ref('');
 
 onLoad(async (options) => {
-  const seatId = options.seatId || 1; //  For testing
+  const seatId = options.seatId || 1; // For testing
 
-  //  Fetch seat info, then store info, then food info
   const seatRes = await uni.request({ url: apiUrl(`/api/seat/customer/${seatId}`) });
-  seat.value = seatRes.data.data;
+  seat.value = seatRes.data?.data || {};
 
   const storeRes = await uni.request({ url: apiUrl(`/api/store/customer/${seat.value.storeId}`) });
-  store.value = storeRes.data.data;
+  store.value = storeRes.data?.data || {};
 
   const foodRes = await uni.request({ url: apiUrl(`/api/food/customer?storeId=${store.value.id}`) });
-  foods.value = foodRes.data.data || [];
+  foods.value = foodRes.data?.data || [];
 
   if (categories.value.length > 0) {
     activeCategory.value = categories.value[0];
@@ -81,9 +85,7 @@ const foodsByCategory = computed(() => {
   const result = {};
   for (const food of (foods.value || [])) {
     const key = food.category || '未分类';
-    if (!result[key]) {
-      result[key] = [];
-    }
+    if (!result[key]) result[key] = [];
     result[key].push(food);
   }
   return result;
@@ -103,9 +105,7 @@ const increment = (food) => {
 const decrement = (food) => {
   if (cart.value[food.id] && cart.value[food.id].quantity > 0) {
     cart.value[food.id].quantity--;
-    if (cart.value[food.id].quantity === 0) {
-      delete cart.value[food.id];
-    }
+    if (cart.value[food.id].quantity === 0) delete cart.value[food.id];
   }
 };
 
@@ -114,34 +114,62 @@ const goToConfirm = () => {
   uni.navigateTo({ url: '/pages/order/confirm' });
 };
 
-//  Scroll-related logic would go here
+const activeCategoryId = computed(() => (activeCategory.value ? `category-${activeCategory.value}` : ''));
+
 const scrollToCategory = (category) => {
-    activeCategory.value = category;
-    uni.pageScrollTo({
-        selector: `#category-${category}`,
-        duration: 300
-    });
+  activeCategory.value = category;
 };
 
 const onFoodScroll = (e) => {
-    //  Logic to update activeCategory based on scroll position
+  // 可根据 e.detail.scrollTop 定位当前分类
 };
-
 </script>
 
 <style>
-/* Add some basic styling */
-.container { display: flex; flex-direction: column; height: 100vh; }
-.store-info { padding: 10px; }
-.menu-content { display: flex; flex: 1; }
-.category-list { width: 100px; background-color: #f8f8f8; }
-.category-item { padding: 15px 10px; text-align: center; }
-.category-item.active { background-color: #fff; }
-.food-list { flex: 1; }
-.category-title { padding: 10px; font-weight: bold; }
-.food-item { display: flex; padding: 10px; }
-.food-image { width: 80px; height: 80px; }
-.food-details { flex: 1; margin-left: 10px; }
-.food-actions { display: flex; align-items: center; }
-.cart-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-top: 1px solid #eee; }
+/* 主题与基础样式 */
+:root { --primary: #3b82f6; --bg: #f5f7fb; --card: #ffffff; --text: #111827; --muted: #6b7280; --border: #e5e7eb; }
+
+.container { height: 100%; display: flex; flex-direction: column; overflow: hidden; background-color: var(--bg); padding: 24rpx; box-sizing: border-box; }
+
+/* 扁平化卡片：去阴影与圆角，改用描边 */
+.card { background: var(--card); border-radius: 0; box-shadow: none; border: 1rpx solid var(--border); }
+
+.store-info { margin: 0; padding: 24rpx; display: flex; justify-content: space-between; align-items: baseline; }
+.store-name { font-size: 36rpx; font-weight: 700; color: var(--text); }
+.store-seat { font-size: 26rpx; color: var(--muted); }
+
+.menu-content { flex: 1; display: flex; gap: 24rpx; padding: 0 0 24rpx; overflow: hidden; }
+
+/* 左侧分类列表扁平化：去圆角阴影，改用描边 */
+.category-list { width: 200rpx; height: 100%; background: var(--card); border-radius: 0; box-shadow: none; border: 1rpx solid var(--border); }
+.category-item { display: flex; align-items: center; gap: 12rpx; padding: 22rpx 16rpx; color: var(--text); border-bottom: 1rpx solid var(--border); }
+.category-item:last-child { border-bottom-width: 0; }
+.category-item.active { background: #f0f6ff; border-left: 8rpx solid var(--primary); }
+.category-dot { width: 12rpx; height: 12rpx; border-radius: 0; background: var(--primary); opacity: 0.6; }
+.category-text { font-size: 26rpx; }
+
+.food-list { flex: 1; height: 100%; }
+.category-section { padding-top: 12rpx; }
+.category-title { padding: 12rpx 8rpx; font-size: 28rpx; color: var(--muted); border-bottom: 1rpx solid var(--border); }
+
+/* 菜品项扁平化：直角图片 + 卡片描边 */
+.food-item { display: flex; padding: 20rpx; gap: 20rpx; margin-bottom: 20rpx; }
+.food-image { width: 160rpx; height: 160rpx; border-radius: 0; background: #eee; }
+.food-details { flex: 1; display: flex; flex-direction: column; }
+.food-name { font-size: 30rpx; font-weight: 600; color: var(--text); }
+.food-desc { margin-top: 8rpx; font-size: 24rpx; color: var(--muted); line-height: 1.5; max-height: 72rpx; overflow: hidden; }
+.food-meta { margin-top: auto; display: flex; justify-content: space-between; align-items: center; }
+.food-price { font-size: 32rpx; font-weight: 700; color: #ef4444; }
+.food-actions { display: flex; align-items: center; gap: 12rpx; }
+.quantity { min-width: 40rpx; text-align: center; color: var(--text); }
+
+/* 扁平化按钮：直角、无阴影，可描边 */
+.btn { width: 56rpx; height: 56rpx; line-height: 56rpx; text-align: center; border-radius: 0; border: 1rpx solid var(--border); background: #ffffff; color: #374151; }
+.btn.plus { background: var(--primary); color: #ffffff; border-color: var(--primary); }
+
+/* 底部栏扁平化：去阴影，添加上边框 */
+.cart-bar { display: flex; justify-content: space-between; align-items: center; padding: 20rpx 24rpx; background: var(--card); box-shadow: none; border-top: 1rpx solid var(--border); }
+.safe-bottom { padding-bottom: constant(safe-area-inset-bottom); padding-bottom: env(safe-area-inset-bottom); }
+.total { font-size: 30rpx; font-weight: 600; color: var(--text); }
+.checkout-btn { background: var(--primary); color: white; padding: 20rpx 32rpx; border-radius: 0; border: none; font-size: 28rpx; }
 </style>
